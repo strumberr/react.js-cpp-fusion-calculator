@@ -1,25 +1,33 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import createModule from "./square.mjs";
+
 
 function App() {
+  const [square, setSquare] = useState();
+  const [currentValue, setCurrentValue] = useState();
+
+  useEffect(
+    () => {
+    createModule().then((Module) => {
+    setSquare(() => Module.cwrap("square", "number", ["number", "number"]));
+    });
+  }, []);
+
+
+  
+  
+  if (!square) {
+    return "Loading webassembly...";
+  }
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <p>Let's do some basic squareition:</p>
+      <div>4 = {square(2)}</div>
+
+      <input value={currentValue} onChange={(e) => setCurrentValue(e.target.value)} />
+      <button onClick={() => alert(square(currentValue))}>Square it!</button>
+      
     </div>
   );
 }
-
 export default App;
