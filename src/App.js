@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import createModule from "./square.mjs";
 
-
+// calculator
 function App() {
   const [square, setSquare] = useState();
   const [currentValue, setCurrentValue] = useState();
