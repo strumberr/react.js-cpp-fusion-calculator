@@ -65,16 +65,22 @@ const D3Chart = ({ functionInput = 'x^2' }) => {
 
         const lastChar = functionInput[functionInput.length - 1];
         if (lastChar === ' ') {
-            functionInput = '2';
+            functionInput = '1';
         } else if (regex.test(functionInput)) {
 
             functionInput = '2';
         } else if (!nonEmptyParenthesesRegex.test(functionInput)) {
 
-            functionInput = '2';
+
+            // if there are no parentheses, then we can skip this check
+            if (!functionInput.includes("(")) {
+                functionInput = functionInput;
+            } else {
+                functionInput = '3';
+            }           
 
         } else if (isNaN(lastChar) && lastChar !== ')') {
-            functionInput = '2';
+            functionInput = '4';
 
         } else {
             functionInput = functionInput;
