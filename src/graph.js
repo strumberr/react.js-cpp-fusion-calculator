@@ -62,28 +62,34 @@ const D3Chart = ({ functionInput = 'x^2' }) => {
 
         const regex = /\(\s*\)/g;
         const nonEmptyParenthesesRegex = /\([^()]*\)/g;
-
         const lastChar = functionInput[functionInput.length - 1];
-        if (lastChar === ' ') {
-            functionInput = '1';
-        } else if (regex.test(functionInput)) {
 
-            functionInput = '2';
-        } else if (!nonEmptyParenthesesRegex.test(functionInput)) {
+        if (!functionInput.includes("(")) {
+                
+            if (lastChar === ' ') {
+                functionInput = '1';
+            } else if (regex.test(functionInput)) {
 
+                functionInput = '2';
+            
+            } else if (isNaN(lastChar) && lastChar !== ')') {
+                functionInput = '4';
 
-            // if there are no parentheses, then we can skip this check
-            if (!functionInput.includes("(")) {
-                functionInput = functionInput;
             } else {
-                functionInput = '3';
-            }           
-
-        } else if (isNaN(lastChar) && lastChar !== ')') {
-            functionInput = '4';
-
+                functionInput = functionInput;
+            }
         } else {
-            functionInput = functionInput;
+            if (lastChar === ' ') {
+                functionInput = '5';
+            } else if (regex.test(functionInput)) {
+                functionInput = '6';
+            } else if (!nonEmptyParenthesesRegex.test(functionInput)) {
+                functionInput = '7';
+            } else if (isNaN(lastChar) && lastChar !== ')') {
+                functionInput = '8';
+            } else {
+                functionInput = functionInput;
+            }
         }
 
 
