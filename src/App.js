@@ -9,10 +9,8 @@ import { evaluate, derivative, simplify, parse } from 'mathjs';
 // calculator
 function App() {
   const [square, setSquare] = useState();
-  const [currentInputValue, setCurrentInputValue] = useState();
-
-
-
+  const [currentInputValue, setCurrentInputValue] = useState("");
+	const [bigGraph, setBigGraph] = useState(false);
 
 
   useEffect(
@@ -24,6 +22,10 @@ function App() {
 
   const handleButtonClick = (value) => {
     setCurrentInputValue(prev => prev + value);
+
+		if (value === 'sin()') {
+
+		}
   };
 
   const data = [];
@@ -32,6 +34,7 @@ function App() {
   }
 
   function formatMathExpression(input) {
+
     if (!input || typeof input !== 'string') {
       return '';
     }
@@ -49,6 +52,7 @@ function App() {
   }
 
   function evaluateSymbolic(expression) {
+
     try {
       const parsedExpression = parse(expression);
 
@@ -82,47 +86,47 @@ function App() {
               onChange={(e) => setCurrentInputValue(e.target.value)}
               className="innerWindowSplitLeftFunctionWrapperInput"
               placeholder="Equations here!!"
-              ref={(input) => input && input.focus()}
+              ref={(inputRef) => inputRef && inputRef.focus()}
             />
           </div>
           <div className="innerWindowSplitLeftButtons">
-            <div className="eachIndButton" onClick={() => handleButtonClick('^')}>
-              <svg className="iconButtonsBasics" fill="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+            <div className="eachIndButton" onClick={() => handleButtonClick('*')}>
+              <svg className="iconButtonsBasics" fill="#C3F0F2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
                 <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
               </svg>
             </div>
             <div className="eachIndButton" onClick={() => handleButtonClick('+')}>
-              <svg className="iconButtonsBasics" fill="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+              <svg className="iconButtonsBasics" fill="#C3F0F2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
                 <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z" />
               </svg>
             </div>
             <div className="eachIndButton" onClick={() => handleButtonClick('-')}>
-              <svg className="iconButtonsBasics" fill="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+              <svg className="iconButtonsBasics" fill="#C3F0F2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
                 <path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z" />
               </svg>
             </div>
             <div className="eachIndButton" onClick={() => handleButtonClick('/')}>
-              <svg className="iconButtonsBasics" fill="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+              <svg className="iconButtonsBasics" fill="#C3F0F2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
                 <path d="M272 96a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zm0 320a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM400 288c17.7 0 32-14.3 32-32s-14.3-32-32-32H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H400z" />
               </svg>
             </div>
 
             <div className="eachIndButtonSplitHalfSeparate">
               <div className="eachIndButtonSplitHalf" onClick={() => handleButtonClick('^')}>
-                <svg className="iconButtonsBasics" style={{ fill: "white" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <svg className="iconButtonsBasics" style={{ fill: "#C3F0F2" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                   <path d="M480 32c0-11.1-5.7-21.4-15.2-27.2s-21.2-6.4-31.1-1.4l-32 16c-15.8 7.9-22.2 27.1-14.3 42.9C393 73.5 404.3 80 416 80v80c-17.7 0-32 14.3-32 32s14.3 32 32 32h32 32c17.7 0 32-14.3 32-32s-14.3-32-32-32V32zM32 64C14.3 64 0 78.3 0 96s14.3 32 32 32H47.3l89.6 128L47.3 384H32c-17.7 0-32 14.3-32 32s14.3 32 32 32H64c10.4 0 20.2-5.1 26.2-13.6L176 311.8l85.8 122.6c6 8.6 15.8 13.6 26.2 13.6h32c17.7 0 32-14.3 32-32s-14.3-32-32-32H304.7L215.1 256l89.6-128H320c17.7 0 32-14.3 32-32s-14.3-32-32-32H288c-10.4 0-20.2 5.1-26.2 13.6L176 200.2 90.2 77.6C84.2 69.1 74.4 64 64 64H32z" />
                 </svg>
               </div>
-              <div className="eachIndButtonSplitHalf">
-
+              <div className="eachIndButtonSplitHalf" onClick={() => handleButtonClick('sin()')}>
+								<div className="textInsideButtons">sin(x)</div>
               </div>
             </div>
             <div className="eachIndButtonSplitHalfSeparate">
-              <div className="eachIndButtonSplitHalf">
-
+              <div className="eachIndButtonSplitHalf" onClick={() => handleButtonClick('cos()')}>
+								<div className="textInsideButtons">cos(x)</div>
               </div>
-              <div className="eachIndButtonSplitHalf">
-
+              <div className="eachIndButtonSplitHalf" onClick={() => handleButtonClick('exp()')}>
+								<div className="textInsideButtons">exp(x)</div>
               </div>
             </div>
             <div className="eachIndButtonSplitHalfSeparate">
@@ -157,10 +161,19 @@ function App() {
             <div className="resultText">{evaluateSymbolic(currentInputValue)}</div>
           </div>
           <div className="innerWindowSplitRightMiddle">
+						
+          </div>
+  				<div className="innerWindowSplitRightBottom" onClick={() => setBigGraph(!bigGraph)}>
 						<D3Chart functionInput={currentInputValue} />
           </div>
-          <div className="innerWindowSplitRightBottom">
-          </div>
+					{bigGraph && (
+						<div className="modalGraphContainer">
+							<div className="modalGraph" onClick={() => setBigGraph(!bigGraph)}>
+								<D3Chart functionInput={currentInputValue} />
+							</div>
+							<div className="modalGraphOverlay"></div>
+						</div>
+					)}
         </div>
       </div>
     </div>
