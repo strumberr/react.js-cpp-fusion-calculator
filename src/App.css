@@ -335,3 +335,66 @@
   border-radius: 20px;
   margin-top: 10px;
 }
+
+.eachIndButtonEqual {
+  flex: 1 1 30%;
+  margin: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 20px;
+  flex-direction: column;
+  cursor: pointer;
+  background-color: #00484C;
+  transition: background-color 0.3s, transform 0.6s;
+}
+
+
+
+
+
+
+.loadingAnimation {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: block;
+  margin:15px auto;
+  position: relative;
+  color: #FFF;
+  box-sizing: border-box;
+  animation: animloader 1s linear infinite alternate;
+}
+
+@keyframes animloader {
+  0% {
+    box-shadow: -38px -12px ,  -14px 0,  14px 0, 38px 0;
+  }
+  33% {
+    box-shadow: -38px 0px, -14px -12px,  14px 0, 38px 0;
+  }
+  66% {
+    box-shadow: -38px 0px , -14px 0, 14px -12px, 38px 0;
+  }
+  100% {
+    box-shadow: -38px 0 , -14px 0, 14px 0 , 38px -12px;
+  }
+}
+
+
+.iterationsSection {
+  display: flex;
+  flex-wrap: wrap;
+  overflow-y: auto;
+  height: 200px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.iterationsSectionSubtitle {
+  width: 50%; 
+  padding: 5px; 
+  box-sizing: border-box;
+  font-size: 16px;
+  color: #77A4A6;
+}

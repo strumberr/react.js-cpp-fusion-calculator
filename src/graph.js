@@ -136,4 +136,155 @@ const D3Chart = ({ functionInput = 'x^2' }) => {
     return <div className="my-dataviz-container" ref={ref} />;
 };
 
-export default D3Chart;
+const convertArrayToIterationValueFormat = (array) => {
+    return array.map((value, index) => {
+        return { iteration: index + 1, value: value };
+    });
+};
+
+const convertArrayToIterationValueFormat2 = (hx, hy) => {
+    if (hx.length !== hy.length) {
+        // Optionally handle the case where the arrays are of different lengths
+        console.error("Arrays hx and hy must be of the same length");
+        return [];
+    }
+
+    return hx.map((hxValue, index) => {
+        return { 
+            iteration: index + 1, 
+            hxValue: hxValue, 
+            hyValue: hy[index] // Access the corresponding element in hy
+        };
+    });
+};
+
+const D3ChartPoints = ({ data = [], hx = [], hy = [] }) => {
+
+    data = convertArrayToIterationValueFormat(data);
+
+    const dataPoints = convertArrayToIterationValueFormat2(hx, hy);
+
+    console.log("data", data);
+
+    const ref = useRef();
+
+    useEffect(() => {
+        const drawChart = (plotData) => {
+            if (ref.current && plotData.length > 0) {
+                const computedStyle = getComputedStyle(ref.current);
+                const width = parseInt(computedStyle.width, 10) - 80; 
+                const height = parseInt(computedStyle.height, 10) - 60; 
+                const margin = { top: 20, right: 30, bottom: 30, left: 40 };
+
+                d3.select(ref.current).select("svg").remove();
+
+                const svg = d3.select(ref.current).append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                const xDomain = d3.extent(plotData, d => d.hxValue);
+                const yDomain = d3.extent(plotData, d => d.hyValue);
+
+                const x = d3.scaleLinear().domain(xDomain).range([0, width]);
+                const y = d3.scaleLinear().domain(yDomain).range([height, 0]);
+
+                svg.append("g")
+                    .attr("transform", `translate(0,${height})`)
+                    .attr("class", "Xaxis")
+                    .call(d3.axisBottom(x));
+
+                svg.append("g")
+                    .attr("class", "Yaxis")
+                    .call(d3.axisLeft(y));
+
+                svg.append("path")
+                    .datum(plotData)
+                    .attr("fill", "none")
+                    .attr("stroke", "#77A4A6")
+                    .attr("stroke-width", 3)
+                    .attr("d", d3.line()
+                        .x(d => x(d.hxValue))
+                        .y(d => y(d.hyValue))
+                    );
+            }
+        };
+
+        drawChart(dataPoints);
+    }, [data]);
+
+    return <div className="my-dataviz-container" ref={ref} />;
+};
+
+const D3ChartPointsIterations = ({ data = [], hx = [], hy = [] }) => {
+
+    data = convertArrayToIterationValueFormat(data);
+
+    const dataPoints = convertArrayToIterationValueFormat2(hx, hy);
+
+    console.log("data", data);
+
+    const ref = useRef();
+
+    useEffect(() => {
+        const drawChart = (plotData) => {
+            if (ref.current && plotData.length > 0) {
+                const computedStyle = getComputedStyle(ref.current);
+                const width = parseInt(computedStyle.width, 10) - 80; 
+                const height = parseInt(computedStyle.height, 10) - 60; 
+                const margin = { top: 20, right: 30, bottom: 30, left: 40 };
+
+                d3.select(ref.current).select("svg").remove();
+
+                const svg = d3.select(ref.current).append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                const xDomain = d3.extent(plotData, d => d.iteration);
+                const yDomain = d3.extent(plotData, d => d.value);
+
+                const x = d3.scaleLinear().domain(xDomain).range([0, width]);
+                const y = d3.scaleLinear().domain(yDomain).range([height, 0]);
+
+                svg.append("g")
+                    .attr("transform", `translate(0,${height})`)
+                    .attr("class", "Xaxis")
+                    .call(d3.axisBottom(x));
+
+                svg.append("g")
+                    .attr("class", "Yaxis")
+                    .call(d3.axisLeft(y));
+
+                svg.append("path")
+                    .datum(plotData)
+                    .attr("fill", "none")
+                    .attr("stroke", "#77A4A6")
+                    .attr("stroke-width", 3)
+                    .attr("d", d3.line()
+                        .x(d => x(d.iteration))
+                        .y(d => y(d.value))
+                    );
+            }
+        };
+
+        drawChart(data);
+    }, [data]);
+
+    return <div className="my-dataviz-container" ref={ref} />;
+};
+
+function AppBoo() {
+    return (
+        <div className="App">
+            <D3Chart />
+        </div>
+    );
+}
+
+export default AppBoo;
+export { D3ChartPoints };
+export { D3Chart };
+export { D3ChartPointsIterations };
