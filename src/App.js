@@ -2,13 +2,16 @@ import React, { useState, useEffect, useRef } from "react";
 import createModule from "./math.mjs";
 import "./App.css";
 import D3Chart from "./graph.js";
-import { evaluate, derivative, simplify, parse } from 'mathjs';
+import { evaluate, derivative, simplify, parse, i } from 'mathjs';
+import createGradientModule from "./dist/gradient.mjs"
 
-
-console.log(createModule);
 // calculator
+
 function App() {
+  const [gradientModule, setGradientModule] = useState()
+
   const [gradialDescentFunction, setGradialDescentFunction] = useState();
+
 	
   const [currentInputValue, setCurrentInputValue] = useState("");
 	const [bigGraph, setBigGraph] = useState(false);
@@ -25,15 +28,19 @@ function App() {
 
 
 	const inputRefFunction = useRef(null);
-
-
+  
   useEffect(
 		() => {
       createModule().then((Module) => {
 			setGradialDescentFunction(() => Module.cwrap("gradient_descent", "number", ["string", "string", "number", "number", "number", "number"]));
 		});
 
+   
 	}, []);
+
+ 
+
+ 
 
 	const handleButtonClick = (value) => {
 		setCurrentInputValue(prev => prev + value);
@@ -209,10 +216,10 @@ function App() {
     return "Loading webassembly...";
   }
 
-	// // print gradient_descent("x**2+y**2-2*x+3", "x", 0, 0.1, 0.0001, 1000);
-	// console.log("gradiente", gradialDescentFunction("x^2", "2*x", 1, 0.1, 0.0001, 1000));
-  // console.log(evaluateSymbolic(currentInputValue).derivative)
-  // console.log("gradiente dinamico", gradialDescentFunction(currentInputValue, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations));
+	// print gradient_descent("x**2+y**2-2*x+3", "x", 0, 0.1, 0.0001, 1000);
+	console.log("gradiente", gradialDescentFunction("x^2", "2*x", 1, 0.1, 0.0001, 1000));
+  console.log(evaluateSymbolic(currentInputValue).derivative)
+  console.log("gradiente dinamico", gradialDescentFunction(currentInputValue, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations));
   return (
     <div className="App">
       <div className="innerWindow">

@@ -25,6 +25,7 @@
   },
   "eslintConfig": {
     "ignorePatterns": [
+      "src/dist/**/*",
       "src/math.mjs"
     ],
     "extends": [
