@@ -1,18 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
-import createModule from "./math.mjs";
+// import createModule from "./math.mjs";
 import "./App.css";
-import D3Chart from "./graph.js";
+import AppBoo, { D3Chart, D3ChartPoints, D3ChartPointsIterations } from "./graph.js";
 import { evaluate, derivative, simplify, parse, i } from 'mathjs';
 import createGradientModule from "./dist/gradient.mjs"
 
-// calculator
+console.log("gradient module", createGradientModule);
 
 function App() {
   const [gradientModule, setGradientModule] = useState()
 
   const [gradialDescentFunction, setGradialDescentFunction] = useState();
 
-	
   const [currentInputValue, setCurrentInputValue] = useState("");
 	const [bigGraph, setBigGraph] = useState(false);
 	const [initialValue, setInitialValue] = useState(0);
@@ -20,19 +19,36 @@ function App() {
 	const [tolerance, setTolerance] = useState(0);
 	const [maxIterations, setMaxIterations] = useState(0);
 	const [derivativeValue, setDerivativeValue] = useState(0);
+  const [equalButton, setEqualButton] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [loadingAnimation, setLoadingAnimation] = useState(false);
+  const [result, setResult] = useState({ x: 0, y: 0, step: 0, hx: [], hy: [] });
+  const [functionCaller, setFunctionCaller] = useState(null);
+
+  const [historyX, setHistoryX] = useState([]);
+  const [historyY, setHistoryY] = useState([]);
+  const [resultXValue, setResultXValue] = useState([]);
+  const [resultYValue, setResultYValue] = useState([]);
+
+  const [callGradientDescent, setCallGradientDescent] = useState(null);
 
 	const inputRefFunction = useRef(null);
   
+
+
+
   useEffect(
 		() => {
-      createModule().then((Module) => {
-        setGradialDescentFunction(() => Module.cwrap("gradient_descent", "number", ["string", "string", "number", "number", "number", "number"]));
-	  	});
+      // createModule().then((Module) => {
+      //   setGradialDescentFunction(() => Module.cwrap("gradient_descent", "number", ["string", "string", "number", "number", "number", "number"]));
+	  	// });
 
       createGradientModule().then((Module) => {
         setGradientModule(Module)
       });
 	  }, []);
+
+ 
 
  
 
@@ -101,55 +117,175 @@ function App() {
 		
   }
 
+  function evaluateExpression(expression) {
 
-	function calculateDerivative(expression) {
-		try {
-      const derivativeCalc = derivative(expression, "x");
-			return derivativeCalc.toString();
+    try {
+      const parsedExpression = parse(expression);
+
+      // if (expression.includes("derivative")) {
+      //   return derivative(parsedExpression, 'X').toString().replace(/\*/g, '');
+      // }
+
+			const simplifiedExpression = simplify(parsedExpression).toString().replace(/\*/g, '');
+			
+			const derivativeCalc = derivative(simplifiedExpression, "x").toString();
+
+
+      return derivativeCalc
+			
     } catch (error) {
       console.error('Error in symbolic evaluation:', error.message);
-      return 0;
+      return 0
     }
-	}
-
-  var ready = gradientModule;
-  if (!ready) { return;}
-
-  var history_x, history_y;
-
-  function call_gradient_descent(l, f, df, x, j, e, c) {
-    gradientModule.ccall("init", null, ["string", "string", "number", "number", "number", "number"], [f, df, x, j, e, c])
-
-    let step = 0;
-    while (l > 0) {
-      gradientModule._generate_next_chunk(Math.min(l, c))
-      history_x = new Float64Array(gradientModule.HEAPF64.buffer, gradientModule._get_history_x(), gradientModule._get_history_size());
-      history_y = new Float64Array(gradientModule.HEAPF64.buffer, gradientModule._get_history_y(), gradientModule._get_history_size());
-
-      step++;
-      
-      // do something with the history
-
-      if (gradientModule._get_if_stopped() == 1) break;
-    
-      l -= c;
-    }
-
-    console.log(history_x[history_x.length - 1])
+		
   }
-  
-  
-  call_gradient_descent(1000000, "x^2", "x", 1, 0.1, 0.000001, 100000);
-  
-  // getHistoryX(); getHistoryY(); getHistorySize(); getErrorMessage();
 
-  // getNextChunk(10);
+
+  useEffect(() => {
+    setShowResult(false);
+
+    if (maxIterations.toString().length >= 6 || stepSize.toString().length >= 8) {
+      setEqualButton(true);
+      setShowResult(false);
+    } else {
+      setEqualButton(false);
+    }
+  }, [maxIterations, stepSize]);
+
+
+  const equalButtonClick = () => {
+    setLoadingAnimation(true);
+    console.log("equal button clicked");
+    setShowResult(true);
+
+    setLoadingAnimation(false);
+  };
+
+
+
+
+  useEffect(() => {
+    const initializeModule = async () => {
+      const Module = await createGradientModule();
+
+      function callGradientDescent(l, f, df, x, j, e, c) {
+        if (l.toString().length === 0 || f.toString().length === 0 || df.toString().length === 0 || x.toString().length === 0 || j.toString().length === 0 || e.toString().length === 0 || c.toString().length === 0) {
+          return {
+            x: 0,
+            y: 0,
+            step: 0,
+            hx: [0],
+            hy: [0]
+          };
+        }
+      
+        Module.ccall("init", null, ["string", "string", "number", "number", "number", "number"], [f, df, x, j, e, c]);
+      
+        let step = 0;
+        let localHx = [];
+        let localHy = [];
+      
+        while (l > 0) {
+          Module._generate_next_chunk(Math.min(c, c));
+          let hx = new Float64Array(Module.HEAPF64.buffer, Module._get_history_x(), Module._get_history_size());
+          let hy = new Float64Array(Module.HEAPF64.buffer, Module._get_history_y(), Module._get_history_size());
+          
+          localHx = localHx.concat(Array.from(hx));
+          localHy = localHy.concat(Array.from(hy));
+      
+          step += 1;
+      
+          if (Module._get_if_stopped() === 1) break;
+      
+          l -= c;
+        }
+      
+        setHistoryX(localHx);
+        setHistoryY(localHy);
+      
+        setResultXValue(localHx[localHx.length - 1]);
+        setResultYValue(localHy[localHy.length - 1]);
+      
+        return {
+          x: localHx[localHx.length - 1],
+          y: localHy[localHy.length - 1],
+          step: step,
+          hx: localHx,
+          hy: localHy
+        };
+      }
+
+
+      setFunctionCaller(() => callGradientDescent);
+    }
+
+    initializeModule();
+    
+  }, []);
+
+
+  useEffect(() => {
+    if (functionCaller) {
+      console.log("run function", functionCaller(100, "x^2", "2*x", 1, 0.1, 0.0001, 100));
+    }
+    // console.log("history x", historyX);
+    // console.log("history y", historyY);
+  }, [functionCaller]);
+
+
+
+
+
+
+  useEffect(() => {
+    
+    if (!equalButton || showResult) {
+      setLoadingAnimation(true);
+      if (maxIterations.toString().length >= 6) {
+        if (equalButton) {
+          if (functionCaller) {
+            const evaluatedValue = evaluateSymbolic(currentInputValue).value;
+            const evaluatedDerivative = evaluateSymbolic(currentInputValue).derivative;
+            const result = functionCaller(maxIterations, evaluatedValue, evaluatedDerivative, initialValue, stepSize, tolerance, maxIterations);
+            console.log("use effect result", result);
+            setLoadingAnimation(false);
+            setResult(result);
+          } else {
+            console.log("function caller not defined");
+          }
+        }
+      } else {
+        if (functionCaller) {
+            const evaluatedValue = evaluateSymbolic(currentInputValue).value;
+            const evaluatedDerivative = evaluateSymbolic(currentInputValue).derivative;
+            const result = functionCaller(maxIterations, evaluatedValue, evaluatedDerivative, initialValue, stepSize, tolerance, maxIterations);
+            console.log("use effect result", result);
+            setLoadingAnimation(false);
+            setResult(result);
+        } else {
+          console.log("function caller not defined");
+        }
+      }
+    }
+    
+    setLoadingAnimation(false);
+  }, [equalButton, showResult, currentInputValue, initialValue, stepSize, tolerance, maxIterations, functionCaller]);
+
+
+
+
+
   
+
+
+  if (!gradientModule) {
+    return "Loading webassembly...";
+  }
+
 	// // print gradient_descent("x**2+y**2-2*x+3", "x", 0, 0.1, 0.0001, 1000);
 	// console.log("gradiente", gradialDescentFunction("x^2", "2*x", 1, 0.1, 0.0001, 1000));
   // console.log(evaluateSymbolic(currentInputValue).derivative)
   // console.log("gradiente dinamico", gradialDescentFunction(currentInputValue, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations));
-  
   return (
     <div className="App">
       <div className="innerWindow">
@@ -209,7 +345,7 @@ function App() {
 									onChange={(e) => setMaxIterations(e.target.value)}
 									className="innerWindowSplitLeftFunctionWrapperInputSmaller"
 									placeholder="Maximum Iterations"
-                  maxLength={6}
+                  maxLength={12}
 								/>
 							</div>
 						</div>
@@ -273,8 +409,8 @@ function App() {
               </div>
             </div>
 
-            <div className="eachIndButton" style={{ backgroundColor: "#0AD1DC" }} >
-              <div className="iconButtonsBasics" style={{ width: "30%", height: "30%" }}>For larger computations</div>
+            <div className="eachIndButtonEqual" style={{ backgroundColor: "#0AD1DC", opacity: equalButton === undefined || !equalButton ? 0.5 : 1}} disabled={equalButton === undefined || !equalButton} onClick={() => equalButtonClick()}>
+              <div style={{ width: "80%", height: "80%", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "poppins", fontWeight: 600, color: "#00484C" }}>For larger computations</div>
             </div>
           </div>
         </div>
@@ -282,18 +418,55 @@ function App() {
           <div className="innerWindowSplitRightTop">
             <label className="resultLabel">Result</label>
             {/* gradial descent using all variables */}
-            <div className="resultText">{gradialDescentFunction(evaluateSymbolic(currentInputValue).value, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations)}</div>
-          </div>
+              {/* {!equalButton && !loadingAnimation && <div className="resultText">{result.x.toString()}</div>}
+              {showResult && !loadingAnimation && <div className="resultText">{result.x.toString()}</div>} */}
+
+              {!equalButton && !loadingAnimation && 
+                <div className="resultText">
+                  {result.x ? result.x.toString() : '0'}
+                </div>
+              }
+              {showResult && !loadingAnimation && 
+                <div className="resultText">
+                  {result.x ? result.x.toString() : '0'}
+                </div>
+              }
+
+              {loadingAnimation && <div className="loadingAnimation">loading</div>}
+            </div>
+            {/* <label className="resultLabel">Result2</label>
+            <div >{evaluateExpression(currentInputValue)}</div> */}
+          {/* if result.hx[0] is === 0 then show: <div>Iterations will appear here</div> */}
           <div className="innerWindowSplitRightMiddle">
-    
+            <label className="resultLabel" style={{ marginBottom: 10 }}>Iterations</label>
+            <div className="iterationsSection">
+              {result.hx && result.hx[0] === 0 ? (
+                <div className="resultText">Iterations will appear here</div>
+              ) : (
+                result.hx && result.hx.map((value, index) => (
+                  <div className="iterationsSectionSubtitle" key={index}>
+                    <span style={{ fontWeight: 600, color: "#C3F0F2" }}>{index}) </span>{value}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
   				<div className="innerWindowSplitRightBottom" onClick={() => setBigGraph(!bigGraph)}>
-						<D3Chart functionInput={currentInputValue} />
+						<D3Chart functionInput={currentInputValue}/>
+						<D3ChartPoints data={result.hx} hx={result.hx} hy={result.hy}/>
+            <D3ChartPointsIterations data={result.hx} hx={result.hx} hy={result.hy}/>
           </div>
 					{bigGraph && (
 						<div className="modalGraphContainer">
 							<div className="modalGraph" onClick={() => setBigGraph(!bigGraph)}>
-								<D3Chart functionInput={currentInputValue} />
+                <label className="resultLabel">Function {currentInputValue}</label>
+                <D3Chart functionInput={currentInputValue} />
+                
+                <label className="resultLabel">Result Gradient Descent</label>
+                <D3ChartPoints data={result.hx} hx={result.hx} hy={result.hy}/>
+
+                <label className="resultLabel">Result Iterations</label>
+                <D3ChartPointsIterations data={result.hx} hx={result.hx} hy={result.hy}/>
 							</div>
 							<div className="modalGraphOverlay"></div>
 						</div>
