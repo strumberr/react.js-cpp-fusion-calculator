@@ -17,6 +17,12 @@ function App() {
 	const [tolerance, setTolerance] = useState(0);
 	const [maxIterations, setMaxIterations] = useState(0);
 	const [derivativeValue, setDerivativeValue] = useState(0);
+  const [equalButton, setEqualButton] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [loadingAnimation, setLoadingAnimation] = useState(false);
+  const [result, setResult] = useState(null);
+  const [functionCaller, setFunctionCaller] = useState(null);
+
 
 	const inputRefFunction = useRef(null);
 
@@ -27,7 +33,6 @@ function App() {
 			setGradialDescentFunction(() => Module.cwrap("gradient_descent", "number", ["string", "string", "number", "number", "number", "number"]));
 		});
 
-   
 	}, []);
 
 	const handleButtonClick = (value) => {
@@ -95,6 +100,29 @@ function App() {
 		
   }
 
+  function evaluateExpression(expression) {
+
+    try {
+      const parsedExpression = parse(expression);
+
+      // if (expression.includes("derivative")) {
+      //   return derivative(parsedExpression, 'X').toString().replace(/\*/g, '');
+      // }
+
+			const simplifiedExpression = simplify(parsedExpression).toString().replace(/\*/g, '');
+			
+			const derivativeCalc = derivative(simplifiedExpression, "x").toString();
+
+
+      return derivativeCalc
+			
+    } catch (error) {
+      console.error('Error in symbolic evaluation:', error.message);
+      return 0
+    }
+		
+  }
+
 
 	function calculateDerivative(expression) {
 		try {
@@ -105,6 +133,73 @@ function App() {
       return 0;
     }
 	}
+  
+
+  useEffect(() => {
+
+    if (maxIterations.toString().length >= 6 || stepSize.toString().length >= 8) {
+      setEqualButton(true);
+      setShowResult(false);
+    } else {
+      setEqualButton(false);
+    }
+  }, [maxIterations, stepSize]);
+
+
+  const equalButtonClick = () => {
+    setLoadingAnimation(true);
+    console.log("equal button clicked");
+    setShowResult(true);
+
+    setLoadingAnimation(false);
+  };
+
+ 
+
+  useEffect(() => {
+    const initializeModule = async () => {
+        const Module = await createModule();
+        setFunctionCaller(() => Module.cwrap("gradient_descent", "number", ["string", "string", "number", "number", "number", "number"]));
+    };
+
+    initializeModule();
+  }, []);
+
+
+  useEffect(() => {
+    
+    if (!equalButton || showResult) {
+      setLoadingAnimation(true);
+      if (maxIterations.toString().length >= 6) {
+        if (equalButton) {
+          if (functionCaller) {
+            const evaluatedValue = evaluateSymbolic(currentInputValue).value;
+            const evaluatedDerivative = evaluateSymbolic(currentInputValue).derivative;
+            const result = functionCaller(evaluatedValue, evaluatedDerivative, initialValue, stepSize, tolerance, maxIterations);
+            console.log("use effect result", result);
+            console.log("loading", loadingAnimation);
+            setLoadingAnimation(false);
+            setResult(result);
+          } else {
+            console.log("function caller not defined");
+          }
+        }
+      } else {
+        if (functionCaller) {
+            const evaluatedValue = evaluateSymbolic(currentInputValue).value;
+            const evaluatedDerivative = evaluateSymbolic(currentInputValue).derivative;
+            const result = functionCaller(evaluatedValue, evaluatedDerivative, initialValue, stepSize, tolerance, maxIterations);
+            console.log("use effect result", result);
+            setLoadingAnimation(false);
+            setResult(result);
+        } else {
+          console.log("function caller not defined");
+        }
+      }
+    }
+    
+    setLoadingAnimation(false);
+  }, [equalButton, showResult, currentInputValue, initialValue, stepSize, tolerance, maxIterations, functionCaller]);
 
 
 
@@ -114,10 +209,10 @@ function App() {
     return "Loading webassembly...";
   }
 
-	// print gradient_descent("x**2+y**2-2*x+3", "x", 0, 0.1, 0.0001, 1000);
-	console.log("gradiente", gradialDescentFunction("x^2", "2*x", 1, 0.1, 0.0001, 1000));
-  console.log(evaluateSymbolic(currentInputValue).derivative)
-  console.log("gradiente dinamico", gradialDescentFunction(currentInputValue, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations));
+	// // print gradient_descent("x**2+y**2-2*x+3", "x", 0, 0.1, 0.0001, 1000);
+	// console.log("gradiente", gradialDescentFunction("x^2", "2*x", 1, 0.1, 0.0001, 1000));
+  // console.log(evaluateSymbolic(currentInputValue).derivative)
+  // console.log("gradiente dinamico", gradialDescentFunction(currentInputValue, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations));
   return (
     <div className="App">
       <div className="innerWindow">
@@ -177,7 +272,7 @@ function App() {
 									onChange={(e) => setMaxIterations(e.target.value)}
 									className="innerWindowSplitLeftFunctionWrapperInputSmaller"
 									placeholder="Maximum Iterations"
-                  maxLength={6}
+                  maxLength={12}
 								/>
 							</div>
 						</div>
@@ -241,8 +336,8 @@ function App() {
               </div>
             </div>
 
-            <div className="eachIndButton" style={{ backgroundColor: "#0AD1DC" }} >
-              <div className="iconButtonsBasics" style={{ width: "30%", height: "30%" }}>For larger computations</div>
+            <div className="eachIndButtonEqual" style={{ backgroundColor: "#0AD1DC", opacity: equalButton === undefined || !equalButton ? 0.5 : 1}} disabled={equalButton === undefined || !equalButton} onClick={() => equalButtonClick()}>
+              <div style={{ width: "80%", height: "80%", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "poppins", fontWeight: 600, color: "#00484C" }}>For larger computations</div>
             </div>
           </div>
         </div>
@@ -250,8 +345,12 @@ function App() {
           <div className="innerWindowSplitRightTop">
             <label className="resultLabel">Result</label>
             {/* gradial descent using all variables */}
-            <div className="resultText">{gradialDescentFunction(evaluateSymbolic(currentInputValue).value, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations)}</div>
-          </div>
+              {!equalButton && !loadingAnimation && <div className="resultText">{result}</div>}
+              {showResult && !loadingAnimation && <div className="resultText">{result}</div>}
+              {loadingAnimation && <div className="loadingAnimation">loading</div>}
+            </div>
+            {/* <label className="resultLabel">Result2</label>
+            <div >{evaluateExpression(currentInputValue)}</div> */}
           <div className="innerWindowSplitRightMiddle">
     
           </div>
