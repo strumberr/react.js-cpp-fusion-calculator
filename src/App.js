@@ -2,13 +2,16 @@ import React, { useState, useEffect, useRef } from "react";
 import createModule from "./math.mjs";
 import "./App.css";
 import D3Chart from "./graph.js";
-import { evaluate, derivative, simplify, parse } from 'mathjs';
+import { evaluate, derivative, simplify, parse, i } from 'mathjs';
+import createGradientModule from "./dist/gradient.mjs"
 
-
-console.log(createModule);
 // calculator
+
 function App() {
+  const [gradientModule, setGradientModule] = useState()
+
   const [gradialDescentFunction, setGradialDescentFunction] = useState();
+
 	
   const [currentInputValue, setCurrentInputValue] = useState("");
 	const [bigGraph, setBigGraph] = useState(false);
@@ -19,16 +22,19 @@ function App() {
 	const [derivativeValue, setDerivativeValue] = useState(0);
 
 	const inputRefFunction = useRef(null);
-
-
+  
   useEffect(
 		() => {
       createModule().then((Module) => {
-			setGradialDescentFunction(() => Module.cwrap("gradient_descent", "number", ["string", "string", "number", "number", "number", "number"]));
-		});
+        setGradialDescentFunction(() => Module.cwrap("gradient_descent", "number", ["string", "string", "number", "number", "number", "number"]));
+	  	});
 
-   
-	}, []);
+      createGradientModule().then((Module) => {
+        setGradientModule(Module)
+      });
+	  }, []);
+
+ 
 
 	const handleButtonClick = (value) => {
 		setCurrentInputValue(prev => prev + value);
@@ -106,18 +112,44 @@ function App() {
     }
 	}
 
+  var ready = gradientModule;
+  if (!ready) { return;}
 
+  var history_x, history_y;
 
+  function call_gradient_descent(l, f, df, x, j, e, c) {
+    gradientModule.ccall("init", null, ["string", "string", "number", "number", "number", "number"], [f, df, x, j, e, c])
 
+    let step = 0;
+    while (l > 0) {
+      gradientModule._generate_next_chunk(Math.min(l, c))
+      history_x = new Float64Array(gradientModule.HEAPF64.buffer, gradientModule._get_history_x(), gradientModule._get_history_size());
+      history_y = new Float64Array(gradientModule.HEAPF64.buffer, gradientModule._get_history_y(), gradientModule._get_history_size());
 
-  if (!gradialDescentFunction) {
-    return "Loading webassembly...";
+      step++;
+      
+      // do something with the history
+
+      if (gradientModule._get_if_stopped() == 1) break;
+    
+      l -= c;
+    }
+
+    console.log(history_x[history_x.length - 1])
   }
+  
+  
+  call_gradient_descent(1000000, "x^2", "x", 1, 0.1, 0.000001, 100000);
+  
+  // getHistoryX(); getHistoryY(); getHistorySize(); getErrorMessage();
 
-	// print gradient_descent("x**2+y**2-2*x+3", "x", 0, 0.1, 0.0001, 1000);
-	console.log("gradiente", gradialDescentFunction("x^2", "2*x", 1, 0.1, 0.0001, 1000));
-  console.log(evaluateSymbolic(currentInputValue).derivative)
-  console.log("gradiente dinamico", gradialDescentFunction(currentInputValue, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations));
+  // getNextChunk(10);
+  
+	// // print gradient_descent("x**2+y**2-2*x+3", "x", 0, 0.1, 0.0001, 1000);
+	// console.log("gradiente", gradialDescentFunction("x^2", "2*x", 1, 0.1, 0.0001, 1000));
+  // console.log(evaluateSymbolic(currentInputValue).derivative)
+  // console.log("gradiente dinamico", gradialDescentFunction(currentInputValue, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations));
+  
   return (
     <div className="App">
       <div className="innerWindow">
