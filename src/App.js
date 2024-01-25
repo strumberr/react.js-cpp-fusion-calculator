@@ -1,32 +1,46 @@
-import React, { useState, useEffect } from "react";
-import createModule from "./square.mjs";
+import React, { useState, useEffect, useRef } from "react";
+import createModule from "./math.mjs";
 import "./App.css";
 import D3Chart from "./graph.js";
 import { evaluate, derivative, simplify, parse } from 'mathjs';
 
 
-
+console.log(createModule);
 // calculator
 function App() {
-  const [square, setSquare] = useState();
+  const [gradialDescentFunction, setGradialDescentFunction] = useState();
+	
   const [currentInputValue, setCurrentInputValue] = useState("");
 	const [bigGraph, setBigGraph] = useState(false);
+	const [initialValue, setInitialValue] = useState(0);
+	const [stepSize, setStepSize] = useState(0);
+	const [tolerance, setTolerance] = useState(0);
+	const [maxIterations, setMaxIterations] = useState(0);
+	const [derivativeValue, setDerivativeValue] = useState(0);
+
+	const inputRefFunction = useRef(null);
 
 
   useEffect(
-    () => {
+		() => {
       createModule().then((Module) => {
-        setSquare(() => Module.cwrap("square", "number", ["number", "number"]));
-      });
-    }, []);
+			setGradialDescentFunction(() => Module.cwrap("gradient_descent", "number", ["string", "string", "number", "number", "number", "number"]));
+		});
 
-  const handleButtonClick = (value) => {
-    setCurrentInputValue(prev => prev + value);
+   
+	}, []);
+
+	const handleButtonClick = (value) => {
+		setCurrentInputValue(prev => prev + value);
+
+		if (inputRefFunction.current) {
+			inputRefFunction.current.focus();
+		}
 
 		if (value === 'sin()') {
-
+			// Handle sin() button click
 		}
-  };
+	};
 
   const data = [];
   for (let x = -10; x <= 10; x += 0.5) {
@@ -47,33 +61,63 @@ function App() {
       .replace(/√/g, 'sqrt')
       .replace(/∛/g, 'cbrt')
       .replace(/∞/g, 'Infinity')
+			.replace("**", '^')
+
+
+		while (formattedInput.includes("**")) {
+			formattedInput = formattedInput.replace("**", "^");
+		}
 
     return formattedInput;
   }
+
+	// (x-2)**2+y**2-2*x+3
 
   function evaluateSymbolic(expression) {
 
     try {
       const parsedExpression = parse(expression);
 
-      if (expression.includes("derivative")) {
-        return derivative(parsedExpression, 'X').toString().replace(/\*/g, '');
-      }
+      // if (expression.includes("derivative")) {
+      //   return derivative(parsedExpression, 'X').toString().replace(/\*/g, '');
+      // }
+			// const simplifiedExpression = simplify(parsedExpression).toString().replace(/\*/g, '');
+			
+			const derivativeCalc = derivative(parsedExpression, "x").toString();
 
-      return simplify(parsedExpression).toString().replace(/\*/g, '');
+
+      return { value: expression, derivative: derivativeCalc };
+			
     } catch (error) {
       console.error('Error in symbolic evaluation:', error.message);
-      return undefined;
+      return { value: 0, derivative: 0 }
     }
+		
   }
 
 
+	function calculateDerivative(expression) {
+		try {
+      const derivativeCalc = derivative(expression, "x");
+			return derivativeCalc.toString();
+    } catch (error) {
+      console.error('Error in symbolic evaluation:', error.message);
+      return 0;
+    }
+	}
 
 
 
-  if (!square) {
+
+
+  if (!gradialDescentFunction) {
     return "Loading webassembly...";
   }
+
+	// print gradient_descent("x**2+y**2-2*x+3", "x", 0, 0.1, 0.0001, 1000);
+	console.log("gradiente", gradialDescentFunction("x^2", "2*x", 1, 0.1, 0.0001, 1000));
+  console.log(evaluateSymbolic(currentInputValue).derivative)
+  console.log("gradiente dinamico", gradialDescentFunction(currentInputValue, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations));
   return (
     <div className="App">
       <div className="innerWindow">
@@ -85,9 +129,59 @@ function App() {
               value={formatMathExpression(currentInputValue)}
               onChange={(e) => setCurrentInputValue(e.target.value)}
               className="innerWindowSplitLeftFunctionWrapperInput"
-              placeholder="Equations here!!"
-              ref={(inputRef) => inputRef && inputRef.focus()}
+              placeholder="Equation here!!"
+							ref={inputRefFunction}
             />
+
+						<div className="splitWrapperInput">
+							<div style={{ marginRight: 10, width: "100%" }}>
+								<label className="functionLabel2">Initial Value</label>
+								<input
+									type="text"
+									value={formatMathExpression(initialValue)}
+									onChange={(e) => setInitialValue(e.target.value)}
+									className="innerWindowSplitLeftFunctionWrapperInputSmaller"
+									placeholder="Initial Value"
+								/>
+							</div>
+
+							<div style={{ marginLeft: 10, width: "100%" }}>
+								<label className="functionLabel2">Step Size</label>
+								<input
+									type="text"
+									value={formatMathExpression(stepSize)}
+									onChange={(e) => setStepSize(e.target.value)}
+									className="innerWindowSplitLeftFunctionWrapperInputSmaller"
+									placeholder="Step Size"
+								/>
+							</div>
+						</div>
+
+						<div className="splitWrapperInput">
+							<div style={{ marginRight: 10, width: "100%" }}>
+								<label className="functionLabel2">Tolerance</label>
+								<input
+									type="text"
+									value={formatMathExpression(tolerance)}
+									onChange={(e) => setTolerance(e.target.value)}
+									className="innerWindowSplitLeftFunctionWrapperInputSmaller"
+									placeholder="Tolerance Value"
+								/>
+							</div>
+
+							<div style={{ marginLeft: 10, width: "100%" }}>
+								<label className="functionLabel2">N* Iterations</label>
+								<input
+									type="text"
+									value={formatMathExpression(maxIterations)}
+									onChange={(e) => setMaxIterations(e.target.value)}
+									className="innerWindowSplitLeftFunctionWrapperInputSmaller"
+									placeholder="Maximum Iterations"
+                  maxLength={6}
+								/>
+							</div>
+						</div>
+
           </div>
           <div className="innerWindowSplitLeftButtons">
             <div className="eachIndButton" onClick={() => handleButtonClick('*')}>
@@ -130,8 +224,8 @@ function App() {
               </div>
             </div>
             <div className="eachIndButtonSplitHalfSeparate">
-              <div className="eachIndButtonSplitHalf">
-
+              <div className="eachIndButtonSplitHalf"  onClick={() => handleButtonClick('tan()')}>
+								<div className="textInsideButtons">tan(x)</div>
               </div>
               <div className="eachIndButtonSplitHalf">
 
@@ -148,20 +242,18 @@ function App() {
             </div>
 
             <div className="eachIndButton" style={{ backgroundColor: "#0AD1DC" }} >
-              <svg className="iconButtonsBasics" fill="#00484C" style={{ width: "30%", height: "30%" }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                <path d="M169.7 .9c-22.8-1.6-41.9 14-47.5 34.7L110.4 80c.5 0 1.1 0 1.6 0c176.7 0 320 143.3 320 320c0 .5 0 1.1 0 1.6l44.4-11.8c20.8-5.5 36.3-24.7 34.7-47.5C498.5 159.5 352.5 13.5 169.7 .9zM399.8 410.2c.1-3.4 .2-6.8 .2-10.2c0-159.1-128.9-288-288-288c-3.4 0-6.8 .1-10.2 .2L.5 491.9c-1.5 5.5 .1 11.4 4.1 15.4s9.9 5.6 15.4 4.1L399.8 410.2zM176 208a32 32 0 1 1 0 64 32 32 0 1 1 0-64zm64 128a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zM96 384a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" />
-              </svg>
+              <div className="iconButtonsBasics" style={{ width: "30%", height: "30%" }}>For larger computations</div>
             </div>
           </div>
         </div>
         <div className="innerWindowSplitRight">
           <div className="innerWindowSplitRightTop">
             <label className="resultLabel">Result</label>
-            {/* <div className="resultText">{square(currentInputValue)}</div> */}
-            <div className="resultText">{evaluateSymbolic(currentInputValue)}</div>
+            {/* gradial descent using all variables */}
+            <div className="resultText">{gradialDescentFunction(evaluateSymbolic(currentInputValue).value, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations)}</div>
           </div>
           <div className="innerWindowSplitRightMiddle">
-						
+    
           </div>
   				<div className="innerWindowSplitRightBottom" onClick={() => setBigGraph(!bigGraph)}>
 						<D3Chart functionInput={currentInputValue} />
