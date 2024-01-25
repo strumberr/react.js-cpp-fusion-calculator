@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import createModule from "./math.mjs";
+// import createModule from "./math.mjs";
 import "./App.css";
 import D3Chart from "./graph.js";
 import { evaluate, derivative, simplify, parse, i } from 'mathjs';
 import createGradientModule from "./dist/gradient.mjs"
 
-// calculator
+console.log("gradient module", createGradientModule);
 
 function App() {
   const [gradientModule, setGradientModule] = useState()
@@ -26,17 +26,29 @@ function App() {
   const [result, setResult] = useState(null);
   const [functionCaller, setFunctionCaller] = useState(null);
 
+  const [historyX, setHistoryX] = useState([]);
+  const [historyY, setHistoryY] = useState([]);
+  const [resultXValue, setResultXValue] = useState([]);
+  const [resultYValue, setResultYValue] = useState([]);
+
+  const [callGradientDescent, setCallGradientDescent] = useState(null);
+
+
+
+
 
 	const inputRefFunction = useRef(null);
   
   useEffect(
 		() => {
-      createModule().then((Module) => {
-			setGradialDescentFunction(() => Module.cwrap("gradient_descent", "number", ["string", "string", "number", "number", "number", "number"]));
-		});
+      // createModule().then((Module) => {
+      //   setGradialDescentFunction(() => Module.cwrap("gradient_descent", "number", ["string", "string", "number", "number", "number", "number"]));
+	  	// });
 
-   
-	}, []);
+      createGradientModule().then((Module) => {
+        setGradientModule(Module)
+      });
+	  }, []);
 
  
 
@@ -161,16 +173,97 @@ function App() {
     setLoadingAnimation(false);
   };
 
- 
+
+
+
+
+  // useEffect(() => {
+  //   if (!gradientModule) return;
+  //   const callGradientDescent = (l, f, df, x, j, e, c) => {
+  //     gradientModule.ccall("init", null, ["string", "string", "number", "number", "number", "number"], [f, df, x, j, e, c]);
+
+  //     let step = 0;
+  //     while (l > 0) {
+  //       gradientModule._generate_next_chunk(Math.min(l, c));
+  //       const hx = new Float64Array(gradientModule.HEAPF64.buffer, gradientModule._get_history_x(), gradientModule._get_history_size());
+  //       const hy = new Float64Array(gradientModule.HEAPF64.buffer, gradientModule._get_history_y(), gradientModule._get_history_size());
+  //       setHistoryX([...historyX, hx[hx.length - 1]]);
+  //       setHistoryY([...historyY, hy[hy.length - 1]]);
+
+  //       step++;
+
+  //       if (gradientModule._get_if_stopped() === 1) break;
+
+  //       l -= c;
+  //     }
+
+  //     console.log(historyX[historyX.length - 1]);
+  //     console.log(historyY[historyY.length - 1]);
+  //   };
+
+  //   // Assuming gradientModule is initialized here
+
+  //   setCallGradientDescent(() => callGradientDescent);
+
+  //   // callGradientDescent(1000000, "x^2", "2*x", 1, 0.1, 0.000001, 100000);
+  // }, [gradientModule]);
+
+
+  // useEffect(() => {
+  //   if (callGradientDescent) {
+  //     console.log("gradient result", setCallGradientDescent(1000000, "x^2", "x", 1, 0.1, 0.000001, 100000));
+  //   }
+  // }, [callGradientDescent]);
+
 
   useEffect(() => {
     const initializeModule = async () => {
-        const Module = await createModule();
-        setFunctionCaller(() => Module.cwrap("gradient_descent", "number", ["string", "string", "number", "number", "number", "number"]));
-    };
+      const Module = await createGradientModule();
+
+      function callGradientDescent(l, f, df, x, j, e, c) {
+        Module.ccall("init", null, ["string", "string", "number", "number", "number", "number"], [f, df, x, j, e, c]);
+  
+        let step = 0;
+
+        while (l > 0) {
+          Module._generate_next_chunk(Math.min(l, c));
+          const hx = new Float64Array(Module.HEAPF64.buffer, Module._get_history_x(), Module._get_history_size());
+          const hy = new Float64Array(Module.HEAPF64.buffer, Module._get_history_y(), Module._get_history_size());
+          setHistoryX([...historyX, hx[hx.length - 1]]);
+          setHistoryY([...historyY, hy[hy.length - 1]]);
+  
+          step++;
+  
+          if (Module._get_if_stopped() === 1) break;
+  
+          l -= c;
+        }
+  
+        console.log(historyX[historyX.length - 1]);
+        console.log(historyY[historyY.length - 1]);
+      };
+
+
+      setFunctionCaller(() => callGradientDescent);
+    }
 
     initializeModule();
+    
   }, []);
+
+
+
+  // useEffect(() => {
+  //   if (functionCaller) {
+  //     console.log("run function", functionCaller(1000000, "x^2", "2*x", 1, 0.1, 0.000001, 100000));
+  //   }
+  //   console.log("history x", historyX);
+  //   console.log("history y", historyY);
+  // }, [functionCaller]);
+
+
+
+
 
 
   useEffect(() => {
@@ -182,7 +275,7 @@ function App() {
           if (functionCaller) {
             const evaluatedValue = evaluateSymbolic(currentInputValue).value;
             const evaluatedDerivative = evaluateSymbolic(currentInputValue).derivative;
-            const result = functionCaller(evaluatedValue, evaluatedDerivative, initialValue, stepSize, tolerance, maxIterations);
+            const result = functionCaller(1000, evaluatedValue, evaluatedDerivative, initialValue, stepSize, tolerance, maxIterations);
             console.log("use effect result", result);
             console.log("loading", loadingAnimation);
             setLoadingAnimation(false);
@@ -195,7 +288,7 @@ function App() {
         if (functionCaller) {
             const evaluatedValue = evaluateSymbolic(currentInputValue).value;
             const evaluatedDerivative = evaluateSymbolic(currentInputValue).derivative;
-            const result = functionCaller(evaluatedValue, evaluatedDerivative, initialValue, stepSize, tolerance, maxIterations);
+            const result = functionCaller(1000, evaluatedValue, evaluatedDerivative, initialValue, stepSize, tolerance, maxIterations);
             console.log("use effect result", result);
             setLoadingAnimation(false);
             setResult(result);
@@ -212,14 +305,17 @@ function App() {
 
 
 
-  if (!gradialDescentFunction) {
+  
+
+
+  if (!gradientModule) {
     return "Loading webassembly...";
   }
 
-	// print gradient_descent("x**2+y**2-2*x+3", "x", 0, 0.1, 0.0001, 1000);
-	console.log("gradiente", gradialDescentFunction("x^2", "2*x", 1, 0.1, 0.0001, 1000));
-  console.log(evaluateSymbolic(currentInputValue).derivative)
-  console.log("gradiente dinamico", gradialDescentFunction(currentInputValue, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations));
+	// // print gradient_descent("x**2+y**2-2*x+3", "x", 0, 0.1, 0.0001, 1000);
+	// console.log("gradiente", gradialDescentFunction("x^2", "2*x", 1, 0.1, 0.0001, 1000));
+  // console.log(evaluateSymbolic(currentInputValue).derivative)
+  // console.log("gradiente dinamico", gradialDescentFunction(currentInputValue, evaluateSymbolic(currentInputValue).derivative, initialValue, stepSize, tolerance, maxIterations));
   return (
     <div className="App">
       <div className="innerWindow">
