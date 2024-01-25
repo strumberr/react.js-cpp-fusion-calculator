@@ -25,7 +25,7 @@
   },
   "eslintConfig": {
     "ignorePatterns": [
-      "src/square.mjs"
+      "src/math.mjs"
     ],
     "extends": [
       "react-app",
