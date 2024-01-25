@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 // import createModule from "./math.mjs";
 import "./App.css";
-import AppBoo, { D3Chart, D3ChartPoints } from "./graph.js";
+import AppBoo, { D3Chart, D3ChartPoints, D3ChartPointsIterations } from "./graph.js";
 import { evaluate, derivative, simplify, parse, i } from 'mathjs';
 import createGradientModule from "./dist/gradient.mjs"
 
@@ -436,12 +436,25 @@ function App() {
             </div>
             {/* <label className="resultLabel">Result2</label>
             <div >{evaluateExpression(currentInputValue)}</div> */}
+          {/* if result.hx[0] is === 0 then show: <div>Iterations will appear here</div> */}
           <div className="innerWindowSplitRightMiddle">
-    
+            <label className="resultLabel" style={{ marginBottom: 10 }}>Iterations</label>
+            <div className="iterationsSection">
+              {result.hx && result.hx[0] === 0 ? (
+                <div className="resultText">Iterations will appear here</div>
+              ) : (
+                result.hx && result.hx.map((value, index) => (
+                  <div className="iterationsSectionSubtitle" key={index}>
+                    <span style={{ fontWeight: 600, color: "#C3F0F2" }}>{index}) </span>{value}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
   				<div className="innerWindowSplitRightBottom" onClick={() => setBigGraph(!bigGraph)}>
 						<D3Chart functionInput={currentInputValue}/>
-						<D3ChartPoints data={result.hx}/>
+						<D3ChartPoints data={result.hx} hx={result.hx} hy={result.hy}/>
+            <D3ChartPointsIterations data={result.hx} hx={result.hx} hy={result.hy}/>
           </div>
 					{bigGraph && (
 						<div className="modalGraphContainer">
@@ -450,7 +463,10 @@ function App() {
                 <D3Chart functionInput={currentInputValue} />
                 
                 <label className="resultLabel">Result Gradient Descent</label>
-                <D3ChartPoints data={result.hx}/>
+                <D3ChartPoints data={result.hx} hx={result.hx} hy={result.hy}/>
+
+                <label className="resultLabel">Result Iterations</label>
+                <D3ChartPointsIterations data={result.hx} hx={result.hx} hy={result.hy}/>
 							</div>
 							<div className="modalGraphOverlay"></div>
 						</div>

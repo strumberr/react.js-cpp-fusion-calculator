@@ -380,3 +380,21 @@
     box-shadow: -38px 0 , -14px 0, 14px 0 , 38px -12px;
   }
 }
+
+
+.iterationsSection {
+  display: flex;
+  flex-wrap: wrap;
+  overflow-y: auto;
+  height: 200px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.iterationsSectionSubtitle {
+  width: 50%; 
+  padding: 5px; 
+  box-sizing: border-box;
+  font-size: 16px;
+  color: #77A4A6;
+}
