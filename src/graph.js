@@ -164,7 +164,7 @@ const D3ChartPoints = ({ data = [], hx = [], hy = [] }) => {
 
     const dataPoints = convertArrayToIterationValueFormat2(hx, hy);
 
-    console.log("data", data);
+    // console.log("data", data);
 
     const ref = useRef();
 
@@ -223,7 +223,7 @@ const D3ChartPointsIterations = ({ data = [], hx = [], hy = [] }) => {
 
     const dataPoints = convertArrayToIterationValueFormat2(hx, hy);
 
-    console.log("data", data);
+    // console.log("data", data);
 
     const ref = useRef();
 
