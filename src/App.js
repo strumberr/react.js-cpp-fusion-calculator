@@ -226,7 +226,7 @@ function App() {
 
   useEffect(() => {
     if (functionCaller) {
-      console.log("run function", functionCaller(100, "x^2", "2*x", 1, 0.1, 0.0001, 100));
+      // console.log("run function", functionCaller(100, "x^2", "2*x", 1, 0.1, 0.0001, 100));
     }
     // console.log("history x", historyX);
     // console.log("history y", historyY);
@@ -247,7 +247,7 @@ function App() {
             const evaluatedValue = evaluateSymbolic(currentInputValue).value;
             const evaluatedDerivative = evaluateSymbolic(currentInputValue).derivative;
             const result = functionCaller(maxIterations, evaluatedValue, evaluatedDerivative, initialValue, stepSize, tolerance, maxIterations);
-            console.log("use effect result", result);
+            // console.log("use effect result", result);
             setLoadingAnimation(false);
             setResult(result);
           } else {
@@ -259,7 +259,7 @@ function App() {
             const evaluatedValue = evaluateSymbolic(currentInputValue).value;
             const evaluatedDerivative = evaluateSymbolic(currentInputValue).derivative;
             const result = functionCaller(maxIterations, evaluatedValue, evaluatedDerivative, initialValue, stepSize, tolerance, maxIterations);
-            console.log("use effect result", result);
+            // console.log("use effect result", result);
             setLoadingAnimation(false);
             setResult(result);
         } else {
